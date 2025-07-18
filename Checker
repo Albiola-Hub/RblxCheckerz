@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Account Checker — Made by Hiroshi</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0a0a0a;
+      color: #ff4d4d;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 2.8em;
+      margin-bottom: 0.2em;
+      color: #ff4d4d;
+      text-shadow: 0 0 10px #ff1a1a, 0 0 20px #ff4d4d;
+    }
+
+    h3 {
+      color: #ff9999;
+      font-weight: normal;
+      margin-bottom: 30px;
+    }
+
+    .input-section {
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      width: 90%;
+      max-width: 500px;
+      padding: 14px;
+      font-size: 16px;
+      border: 2px solid #ff4d4d;
+      background-color: #1a1a1a;
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 8px #ff1a1a;
+      outline: none;
+    }
+
+    .btn {
+      margin: 10px 5px;
+      padding: 12px 22px;
+      font-size: 16px;
+      background-color: #ff1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #ff3333, 0 0 25px #ff4d4d;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #cc0000;
+    }
+
+    .result {
+      background: rgba(255, 77, 77, 0.08);
+      border: 1px solid #ff4d4d;
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 30px;
+      display: inline-block;
+      max-width: 500px;
+      width: 90%;
+      text-align: left;
+      box-shadow: 0 0 15px #ff1a1a;
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      border: 3px solid #ff4d4d;
+      box-shadow: 0 0 10px #ff1a1a;
+    }
+
+    .tag {
+      background: #ff4d4d;
+      color: #0a0a0a;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      margin-left: 5px;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.7s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>🍪 Cookie Account Checker</h1>
+  <h3>Made with 🔥 by <strong>Hiroshi</strong></h3>
+
+  <div class="input-section">
+    <input type="text" id="cookieInput" placeholder="Paste your .ROBLOSECURITY cookie here">
+    <br>
+    <button class="btn" onclick="checkOnly()">Cookie Checker</button>
+    <button class="btn" onclick="checkCookie()">Submit (Full Info)</button>
+    <button class="btn" onclick="refreshCookie()">Cookie Refresher</button>
+  </div>
+
+  <div id="result" class="result fade-in"></div>
+
+  <script>
+    async function checkOnly() {
+      const cookie = document.getElementById("cookieInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "🔍 Checking cookie validity...";
+      try {
+        const res = await fetch("https://users.roblox.com/v1/users/authenticated", {
+          headers: { "Cookie": ".ROBLOSECURITY=" + cookie }
+        });
+
+        if (res.status === 200) {
+          resultDiv.innerHTML = "✅ Cookie is valid.";
+        } else {
+          resultDiv.innerHTML = "❌ Cookie is invalid or expired.";
+        }
+      } catch (err) {
+        resultDiv.innerHTML = "❌ Error during check.";
+      }
+    }
+
+    async function checkCookie() {
+      const cookie = document.getElementById("cookieInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "⏳ Fetching account info...";
+
+      try {
+        const userRes = await fetch("https://users.roblox.com/v1/users/authenticated", {
+          headers: { "Cookie": ".ROBLOSECURITY=" + cookie }
+        });
+
+        if (userRes.status !== 200) {
+          resultDiv.innerHTML = "❌ Invalid or expired cookie.";
+          return;
+        }
+
+        const user = await userRes.json();
+
+        const avatarRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png&isCircular=false`);
+        const avatarData = await avatarRes.json();
+        const avatarUrl = avatarData.data[0]?.imageUrl || "";
+
+        const premiumRes = await fetch(`https://premiumfeatures.roblox.com/v1/users/${user.id}/validate-membership`);
+        const hasPremium = await premiumRes.json();
+
+        const korbloxId = 134082579;
+        const headlessId = 134082562;
+
+        const korbloxRes = await fetch(`https://inventory.roblox.com/v1/users/${user.id}/items/Asset/${korbloxId}`, {
+          headers: { "Cookie": ".ROBLOSECURITY=" + cookie }
+        });
+
+        const headlessRes = await fetch(`https://inventory.roblox.com/v1/users/${user.id}/items/Asset/${headlessId}`, {
+          headers: { "Cookie": ".ROBLOSECURITY=" + cookie }
+        });
+
+        const hasKorblox = korbloxRes.status === 200;
+        const hasHeadless = headlessRes.status === 200;
+
+        resultDiv.innerHTML = `
+          <div class="fade-in">
+            <center><img src="${avatarUrl}" class="avatar" alt="Avatar"></center>
+            <h2>${user.displayName} <span class="tag">@${user.name}</span></h2>
+            <p>🪙 Premium: <strong>${hasPremium ? "✅ Yes" : "❌ No"}</strong></p>
+            <p>🦴 Korblox: <strong>${hasKorblox ? "✅ Owned" : "❌ Not Owned"}</strong></p>
+            <p>💀 Headless: <strong>${hasHeadless ? "✅ Owned" : "❌ Not Owned"}</strong></p>
+            <p style="color: #a3ff99;">✅ Cookie is valid and account loaded.</p>
+          </div>
+        `;
+      } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = "❌ Something went wrong.";
+      }
+    }
+
+    function refreshCookie() {
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "🔁 Cookie Refresher: (Not implemented yet)<br>You can add functionality here like refreshing sessions.";
+    }
+  </script>
+</body>
+</html>
